@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.govy.base.mapper.ScoreMapper">
+
+    <resultMap id="BaseResultMap" type="com.govy.model.entity.Score">
+        <id property="id" column="id" />
+        <result property="teamId" column="team_id" />
+        <result property="judgeId" column="judge_id" />
+        <result property="score" column="score" />
+        <result property="comment" column="comment" />
+        <result property="createTime" column="create_time" />
+    </resultMap>
+
+    <resultMap id="TeamScoreResultMap" type="com.govy.model.vo.TeamWithScoreVO">
+        <id property="teamId" column="team_id"/>
+        <collection property="scoreList" javaType="java.util.ArrayList" ofType="java.lang.Integer">
+            <result column="score"/>
+        </collection>
+    </resultMap>
+
+    <select id="selectTeamScore" resultMap="TeamScoreResultMap" parameterType="java.lang.Integer">
+        SELECT
+        t.id AS team_id,
+        s.score
+        FROM competition c
+        JOIN competition_team ct ON c.id = ct.competition_id
+        JOIN team t ON ct.team_id = t.id
+        JOIN score s ON t.id = s.team_id
+        WHERE c.id = #{competitionId}
+    </select>
+
+</mapper>

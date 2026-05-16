@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.govy.base.mapper.TeamMapper">
+
+    <resultMap id="BaseResultMap" type="com.govy.model.entity.Team">
+            <id property="id" column="id" />
+            <result property="team" column="team" />
+    </resultMap>
+
+    <select id="selectPageByUserIdAndTeam" resultType="com.govy.model.vo.TeamQueryLikeVO">
+        SELECT
+        t.id,
+        t.team,
+        ct.competition_id,
+        c.competition_name,
+        t.create_time AS createTime,
+        u_teacher.username AS teacher
+        FROM team t
+        INNER JOIN team_user tu ON t.id = tu.team_id
+        LEFT JOIN user u_teacher ON t.teacher_id = u_teacher.id
+        LEFT JOIN competition_team ct ON t.id = ct.team_id
+        LEFT JOIN competition c ON ct.competition_id = c.id
+        <where>
+            tu.user_id = #{userId}
+            <if test="team != null and team != ''">
+                AND t.team LIKE CONCAT('%', #{team}, '%')
+            </if>
+        </where>
+    </select>
+    <select id="selectByTeamId" resultType="com.govy.model.vo.TeamUserVO">
+        select u.id userId,
+               tu.status,
+               u.phone,
+               u.avatar_url url,
+               u.username as username,
+               un.name as university
+        from team t,
+             team_user tu,
+             user u,
+             university un
+        where t.id = tu.team_id
+          and tu.user_id = u.id
+          and u.school_id = un.id
+          and t.id = #{teamId}
+    </select>
+    <select id="selectCompetitionByTeamId" resultType="com.govy.model.vo.TeamVO">
+        SELECT
+            t.id,
+            t.team,
+            u.username AS teacher
+        FROM team t
+        left join user u ON t.teacher_id = u.id
+        WHERE t.id = #{teamId}
+    </select>
+    <select id="selectTeamByCaptain" resultType="com.govy.model.vo.TeamNameVO">
+        select t.id,
+               t.team as teamName
+        from team t
+                 left join team_user tu
+                           on t.id = tu.team_id
+        where tu.user_id = #{userId}
+          and tu.status = #{captain}
+        order by t.update_time desc
+    </select>
+    <select id="selectUserIdByTeamId" resultType="java.lang.Integer" parameterType="java.lang.Integer">
+        select tu.user_id
+        from team t
+        left join team_user tu
+        on t.id = tu.team_id
+        where t.id = #{teamId}
+    </select>
+    <select id="selectPageWithTeamName" resultType="com.govy.model.vo.TeamAdminQueryLikeVO">
+        SELECT
+        t.id,
+        t.team AS teamName,
+        t.create_time,
+        u.username AS teacherName,
+        (SELECT COUNT(*) FROM team_user tu_sub WHERE tu_sub.team_id = t.id) AS teamNum,
+        (
+        SELECT u2.username
+        FROM team_user tu_leader
+        JOIN user u2 ON tu_leader.user_id = u2.id
+        WHERE tu_leader.team_id = t.id
+        AND tu_leader.status = 0
+        LIMIT 1
+        ) AS leaderName
+        FROM team t
+        LEFT JOIN user u ON t.teacher_id = u.id
+        <where>
+            <if test="teamName != null and teamName != ''">
+                t.team LIKE CONCAT('%', #{teamName}, '%')
+            </if>
+        </where>
+        order by t.create_time desc
+    </select>
+    <select id="getTeamCompetition" resultType="com.govy.model.vo.CompetitionByTeamIdVO"
+            parameterType="java.lang.Integer">
+        select c.id as competitionId,
+               c.competition_name
+        from competition c
+        left join competition_team ct on c.id = ct.competition_id
+        where ct.team_id = #{teamId}
+    </select>
+    <select id="getTeamWork" resultType="com.govy.model.vo.WorkAdminVO">
+        select w.id as workId,
+               w.name,
+               w.picture as workUrl,
+               w.introduction as description
+        from work w
+        where w.team_id = #{teamId}
+        and w.competition_id = #{competitionId}
+    </select>
+    <select id="getTeamComment" resultType="com.govy.model.vo.ScoreVO">
+        select score,
+               comment,
+               u.username   as judgeName,
+               u.avatar_url as judgeAvatar
+        from score s
+                 left join user u on s.judge_id = u.id
+        where s.team_id = #{teamId}
+          and s.competition_id = #{competitionId}
+    </select>
+</mapper>

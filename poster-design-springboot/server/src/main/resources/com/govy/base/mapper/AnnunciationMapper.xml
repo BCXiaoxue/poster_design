@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.govy.base.mapper.AnnunciationMapper">
+
+    <resultMap id="BaseResultMap" type="com.govy.model.entity.Annunciation">
+            <id property="id" column="id" />
+            <result property="title" column="title" />
+            <result property="content" column="content" />
+            <result property="uploadTime" column="upload_time" />
+            <result property="competitionId" column="competition_id" />
+    </resultMap>
+
+    <resultMap id="AnnunciationVOResultMap" type="com.govy.model.vo.AnnunciationVO">
+        <id property="id" column="id"/>
+        <result property="title" column="title"/>
+        <result property="competitionId" column="competition_id"/>
+
+        <collection property="images" ofType="string">
+            <result column="image_url"/>
+        </collection>
+    </resultMap>
+
+    <select id="getAllByIds" resultMap="AnnunciationVOResultMap">
+        SELECT
+        a.id,
+        a.title,
+        a.competition_id,
+        i.url AS image_url
+        FROM annunciation a
+        LEFT JOIN image i ON a.id = i.image_id AND i.category = 1
+        WHERE a.id IN
+        <foreach item="id" collection="ids" separator="," open="(" close=")">
+            #{id}
+        </foreach>
+    </select>
+</mapper>

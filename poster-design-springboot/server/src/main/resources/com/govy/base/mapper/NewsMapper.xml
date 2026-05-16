@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.govy.base.mapper.NewsMapper">
+
+    <resultMap id="BaseResultMap" type="com.govy.model.entity.News">
+            <id property="id" column="id" />
+            <result property="title" column="title" />
+            <result property="content" column="content" />
+            <result property="uploadTime" column="upload_time" />
+            <result property="competitionId" column="competition_id" />
+            <result property="createTime" column="create_time" />
+            <result property="updateTime" column="update_time" />
+    </resultMap>
+
+    <resultMap id="NewsVOResultMap" type="com.govy.model.vo.NewsVO">
+        <!-- 基础字段映射 -->
+        <id property="id" column="id"/>
+        <result property="title" column="title"/>
+        <result property="competitionId" column="competition_id"/>
+
+        <!-- 图片集合映射 -->
+        <collection property="images" ofType="string">
+            <result column="image_url"/>
+        </collection>
+    </resultMap>
+
+    <select id="getAllByIds" resultMap="NewsVOResultMap">
+        SELECT
+        n.id,
+        n.title,
+        n.competition_id,
+        i.url AS image_url
+        FROM news n
+        LEFT JOIN image i ON n.id = i.image_id AND i.category = 2
+        WHERE n.id IN
+        <foreach item="id" collection="ids" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </select>
+</mapper>

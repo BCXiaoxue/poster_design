@@ -1,0 +1,458 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.govy.base.mapper.CompetitionMapper">
+
+    <resultMap id="BaseResultMap" type="com.govy.model.entity.Competition">
+            <id property="id" column="id" />
+            <result property="competitionName" column="competition_name" />
+            <result property="categoryId" column="category_id" />
+            <result property="introduction" column="introduction" />
+            <result property="registrationBegin" column="registration_begin" />
+            <result property="registrationEnd" column="registration_end" />
+            <result property="people" column="people" />
+            <result property="notes" column="notes" />
+            <result property="schedule" column="schedule" />
+            <result property="createTime" column="create_time" />
+            <result property="updateTime" column="update_time" />
+    </resultMap>
+
+    <resultMap id="CompetitionMyVOMap" type="com.govy.model.vo.CompetitionMyVO">
+        <id property="id" column="id" />
+        <result property="competitionName" column="competition_name" />
+        <result property="registrationBegin" column="registration_begin" />
+        <result property="registrationEnd" column="registration_end" />
+        <result property="activityEnd" column="activity_end" />
+        <result property="role" column="role" />
+    </resultMap>
+
+
+    <select id="selectPageA" resultMap="CompetitionMyVOMap">
+        select distinct
+        c.id,
+        c.competition_name,
+        c.registration_begin,
+        c.registration_end,
+        c.activity_end,
+        status as role,
+        c.update_time,
+        CASE
+            WHEN NOW() &lt; c.registration_begin THEN 0
+            WHEN NOW() &gt;= c.registration_begin AND NOW() &lt;= c.registration_end THEN 1
+            WHEN NOW() &gt; c.registration_end AND NOW() &lt;= c.activity_end THEN 2
+            ELSE 3
+        END as competition_status
+        from competition c, competition_team ct, team t, team_user tu
+        <where>
+            c.id = ct.competition_id
+            and ct.team_id = t.id
+            and t.id = tu.team_id
+            and tu.user_id = #{userId}
+            <if test="competitionName != null">
+                and c.competition_name like concat('%', #{competitionName}, '%')
+            </if>
+        </where>
+        order by competition_status, c.update_time desc
+    </select>
+    <select id="selectPageB" resultMap="CompetitionMyVOMap">
+        SELECT DISTINCT
+        c.id,
+        c.competition_name,
+        c.registration_begin,
+        c.registration_end,
+        c.activity_end,
+        status as role,
+        c.update_time
+        FROM competition c
+        JOIN competition_team ct ON c.id = ct.competition_id
+        JOIN team t ON ct.team_id = t.id
+        JOIN team_user tu ON t.id = tu.team_id
+        <where>
+            tu.user_id = #{userId}
+            <if test="competitionName != null and competitionName != ''">
+                AND c.competition_name LIKE CONCAT('%', #{competitionName}, '%')
+            </if>
+            AND NOW() &lt; c.registration_begin
+        </where>
+        ORDER BY c.update_time DESC
+    </select>
+    <select id="selectPageC" resultMap="CompetitionMyVOMap">
+        SELECT distinct
+        c.id,
+        c.competition_name,
+        c.registration_begin,
+        c.registration_end,
+        c.activity_end,
+        status as role,
+        c.update_time
+        FROM competition c
+        JOIN competition_team ct ON c.id = ct.competition_id
+        JOIN team t ON ct.team_id = t.id
+        JOIN team_user tu ON t.id = tu.team_id
+        <where>
+            tu.user_id = #{userId}
+            <if test="competitionName != null and competitionName != ''">
+                AND c.competition_name LIKE CONCAT('%', #{competitionName}, '%')
+            </if>
+            and now() &gt;= c.registration_begin and now() &lt;= c.registration_end
+        </where>
+        order by c.update_time desc
+    </select>
+    <select id="selectPageD" resultMap="CompetitionMyVOMap">
+        SELECT distinct
+        c.id,
+        c.competition_name,
+        c.registration_begin,
+        c.registration_end,
+        c.activity_end,
+        status as role,
+        c.update_time
+        FROM competition c
+        JOIN competition_team ct ON c.id = ct.competition_id
+        JOIN team t ON ct.team_id = t.id
+        JOIN team_user tu ON t.id = tu.team_id
+        <where>
+            c.id = ct.competition_id
+            and ct.team_id = t.id
+            and t.id = tu.team_id
+            and tu.user_id = #{userId}
+            <if test="competitionName != null and competitionName != ''">
+                and c.competition_name like concat('%', #{competitionName}, '%')
+            </if>
+            and now() &gt; c.registration_end and now() &lt;= c.activity_end
+        </where>
+        order by c.update_time desc
+    </select>
+    <select id="selectPageE" resultMap="CompetitionMyVOMap">
+        SELECT distinct
+        c.id,
+        c.competition_name,
+        c.registration_begin,
+        c.registration_end,
+        c.activity_end,
+        status as role,
+        c.update_time
+        FROM competition c
+        JOIN competition_team ct ON c.id = ct.competition_id
+        JOIN team t ON ct.team_id = t.id
+        JOIN team_user tu ON t.id = tu.team_id
+        <where>
+            c.id = ct.competition_id
+            and ct.team_id = t.id
+            and t.id = tu.team_id
+            and tu.user_id = #{userId}
+            <if test="competitionName != null and competitionName != ''">
+                and c.competition_name like concat('%', #{competitionName}, '%')
+            </if>
+            and now() &gt; c.activity_end
+        </where>
+        order by c.update_time desc
+    </select>
+
+
+    <resultMap id="CompetitionAdminLikeVOResultMap" type="com.govy.model.vo.CompetitionAdminLikeVO">
+        <id column="id" property="id" jdbcType="INTEGER"/>
+        <result column="competition_name" property="competitionName" jdbcType="VARCHAR"/>
+        <result column="introduction" property="introduction" jdbcType="VARCHAR"/>
+        <result column="registration_begin" property="registrationBegin" jdbcType="DATE"/>
+        <result column="registration_end" property="registrationEnd" jdbcType="DATE"/>
+        <result column="activity_end" property="activityEnd" jdbcType="DATE"/>
+        <result column="competition_status" property="competitionStatus" jdbcType="INTEGER"/>
+        <result column="competition_people" property="competitionPeople" jdbcType="INTEGER"/>
+        <result column="categoryId" property="categoryId" jdbcType="INTEGER"/>
+        <result column="categoryName" property="categoryName" jdbcType="VARCHAR"/>
+
+        <!-- 使用分离查询处理集合 -->
+        <collection
+                property="competitionImages"
+                column="id"
+                javaType="java.util.List"
+                ofType="string"
+                select="selectCompetitionImages"/>
+
+        <collection
+                property="userAvatars"
+                column="id"
+                javaType="java.util.List"
+                ofType="string"
+                select="selectUserAvatars"/>
+    </resultMap>
+
+    <select id="selectPageAdminB" resultMap="CompetitionAdminLikeVOResultMap" parameterType="map">
+        SELECT
+        c.id,
+        c.competition_name,
+        c.introduction,
+        c.registration_begin,
+        c.registration_end,
+        c.activity_end,
+        cc.id AS categoryId,
+        cc.name AS categoryName,
+        (SELECT COUNT(DISTINCT tu.user_id)
+        FROM competition_team ct
+        JOIN team t ON ct.team_id = t.id
+        JOIN team_user tu ON t.id = tu.team_id
+        WHERE ct.competition_id = c.id) AS competition_people
+        FROM competition c
+        LEFT JOIN competition_category cc ON c.category_id = cc.id
+        <where>
+            now() &lt; c.registration_begin
+            <if test="competitionName != null and competitionName != ''">
+                AND c.competition_name LIKE CONCAT('%', #{competitionName}, '%')
+            </if>
+            <if test="categoryId != null">
+                AND c.category_id = #{categoryId}
+            </if>
+        </where>
+        ORDER BY c.update_time DESC
+    </select>
+
+    <!-- 竞赛图片查询 -->
+    <select id="selectCompetitionImages" resultType="string">
+        SELECT url AS image_url
+        FROM image
+        WHERE image_id = #{id}
+          AND category = 0
+        order by id;
+    </select>
+
+    <!-- 用户头像查询（限制5个） -->
+    <select id="selectUserAvatars" resultType="string">
+        SELECT DISTINCT u.avatar_url AS avatar
+        FROM competition_team ct
+                 JOIN team t ON ct.team_id = t.id
+                 JOIN team_user tu ON t.id = tu.team_id
+                 JOIN user u ON tu.user_id = u.id
+        WHERE ct.competition_id = #{id}
+    </select>
+
+
+    <select id="selectPageAdminC" resultMap="CompetitionAdminLikeVOResultMap" parameterType="java.lang.String">
+        SELECT
+        c.id,
+        c.competition_name,
+        c.introduction,
+        c.registration_begin,
+        c.registration_end,
+        c.activity_end,
+        cc.id AS categoryId,
+        cc.name AS categoryName,
+        (SELECT COUNT(DISTINCT tu.user_id)
+        FROM competition_team ct
+        JOIN team t ON ct.team_id = t.id
+        JOIN team_user tu ON t.id = tu.team_id
+        WHERE ct.competition_id = c.id) AS competition_people
+        FROM competition c
+        LEFT JOIN competition_category cc ON c.category_id = cc.id
+        <where>
+            <if test="competitionName != null and competitionName != ''">
+                c.competition_name LIKE CONCAT('%', #{competitionName}, '%')
+            </if>
+            <if test="categoryId != null">
+                AND c.category_id = #{categoryId}
+            </if>
+            and now() &gt;= c.registration_begin and now() &lt;= c.registration_end
+        </where>
+        ORDER BY c.update_time DESC
+    </select>
+    <select id="selectPageAdminD" resultMap="CompetitionAdminLikeVOResultMap" parameterType="java.lang.String">
+        SELECT
+        c.id,
+        c.competition_name,
+        c.introduction,
+        c.registration_begin,
+        c.registration_end,
+        c.activity_end,
+        cc.id AS categoryId,
+        cc.name AS categoryName,
+        (SELECT COUNT(DISTINCT tu.user_id)
+        FROM competition_team ct
+        JOIN team t ON ct.team_id = t.id
+        JOIN team_user tu ON t.id = tu.team_id
+        WHERE ct.competition_id = c.id) AS competition_people
+        FROM competition c
+        LEFT JOIN competition_category cc ON c.category_id = cc.id
+        <where>
+            <if test="competitionName != null and competitionName != ''">
+                c.competition_name LIKE CONCAT('%', #{competitionName}, '%')
+            </if>
+            <if test="categoryId != null">
+                AND c.category_id = #{categoryId}
+            </if>
+            and now() &gt;= c.registration_end and now() &lt;= c.activity_end
+        </where>
+        ORDER BY c.update_time DESC
+    </select>
+    <select id="selectPageAdminE" resultMap="CompetitionAdminLikeVOResultMap" parameterType="java.lang.String">
+        SELECT
+        c.id,
+        c.competition_name,
+        c.introduction,
+        c.registration_begin,
+        c.registration_end,
+        c.activity_end,
+        cc.id AS categoryId,
+        cc.name AS categoryName,
+        (SELECT COUNT(DISTINCT tu.user_id)
+        FROM competition_team ct
+        JOIN team t ON ct.team_id = t.id
+        JOIN team_user tu ON t.id = tu.team_id
+        WHERE ct.competition_id = c.id) AS competition_people
+        FROM competition c
+        LEFT JOIN competition_category cc ON c.category_id = cc.id
+        <where>
+            <if test="competitionName != null and competitionName != ''">
+                c.competition_name LIKE CONCAT('%', #{competitionName}, '%')
+            </if>
+            <if test="categoryId != null">
+                AND c.category_id = #{categoryId}
+            </if>
+            and now() &gt; c.activity_end
+        </where>
+        ORDER BY c.update_time DESC
+    </select>
+    <select id="selectPageBB" resultType="com.govy.model.vo.CompetitionMyVO">
+        SELECT
+        c.id,
+        c.competition_name,
+        c.registration_begin,
+        c.registration_end,
+        c.activity_end,
+        c.update_time
+        FROM competition c
+        <where>
+            <if test="competitionName != null and competitionName != ''">
+                AND c.competition_name LIKE CONCAT('%', #{competitionName}, '%')
+            </if>
+            AND now() &lt; c.registration_begin
+        </where>
+        ORDER BY c.update_time DESC
+    </select>
+    <select id="selectPageCC" resultType="com.govy.model.vo.CompetitionMyVO">
+        SELECT distinct
+        c.id,
+        c.competition_name,
+        c.registration_begin,
+        c.registration_end,
+        c.activity_end,
+        c.update_time
+        FROM competition c
+        <where>
+            <if test="competitionName != null and competitionName != ''">
+                AND c.competition_name LIKE CONCAT('%', #{competitionName}, '%')
+            </if>
+            and now() &gt;= c.registration_begin and now() &lt;= c.registration_end
+        </where>
+        order by c.update_time desc
+    </select>
+    <select id="selectPageDD" resultType="com.govy.model.vo.CompetitionMyVO">
+        select distinct
+        c.id,
+        c.competition_name,
+        c.registration_begin,
+        c.registration_end,
+        c.activity_end,
+        c.update_time
+        from competition c
+        <where>
+            <if test="competitionName != null and competitionName != ''">
+                and c.competition_name like concat('%', #{competitionName}, '%')
+            </if>
+            and now() &gt; c.registration_end and now() &lt;= c.activity_end
+        </where>
+        order by c.update_time desc
+    </select>
+    <select id="selectPageEE" resultType="com.govy.model.vo.CompetitionMyVO">
+        select distinct
+        c.id,
+        c.competition_name,
+        c.registration_begin,
+        c.registration_end,
+        c.activity_end,
+        c.update_time
+        from competition c
+        <where>
+            <if test="competitionName != null and competitionName != ''">
+                and c.competition_name like concat('%', #{competitionName}, '%')
+            </if>
+            and now() &gt; c.activity_end
+        </where>
+        order by c.update_time desc
+    </select>
+
+
+
+
+
+
+
+
+
+
+
+
+    <resultMap id="CompetitionAdminByIdVOResultMap" type="com.govy.model.vo.CompetitionAdminByIdVO">
+        <!-- 竞赛基础字段 -->
+        <id property="id" column="id"/>
+        <result property="competitionName" column="competition_name"/>
+        <result property="introduction" column="introduction"/>
+        <result property="registrationBegin" column="registration_begin"/>
+        <result property="registrationEnd" column="registration_end"/>
+        <result property="activityEnd" column="activity_end"/>
+        <result property="people" column="people"/>
+        <result property="notes" column="notes"/>
+        <result property="schedule" column="schedule"/>
+
+        <!-- 队伍统计 -->
+        <result property="teamCount" column="teamCount"/>
+
+        <!-- 评委列表（一对多） -->
+        <collection property="judges" ofType="com.govy.model.vo.JudgeVO">
+            <result property="judgeAvatarUrl" column="judgeAvatarUrl"/>
+            <result property="judgeName" column="judgeName"/>
+        </collection>
+    </resultMap>
+    <select id="getByIdWithAll" resultMap="CompetitionAdminByIdVOResultMap" parameterType="java.lang.Integer">
+        SELECT
+        c.id,
+        c.competition_name,
+        c.introduction,
+        c.registration_begin,
+        c.registration_end,
+        c.activity_end,
+        c.people,
+        c.notes,
+        c.schedule,
+        u.avatar_url AS judgeAvatarUrl,
+        u.username AS judgeName,
+        (SELECT COUNT(*) FROM competition_team ct WHERE ct.competition_id = c.id) AS teamCount
+        FROM competition c
+        LEFT JOIN judge j ON c.id = j.competition_id
+        LEFT JOIN user u ON j.user_id = u.id
+        WHERE c.id = #{id}
+    </select>
+    <select id="selectEndCompetition" resultType="java.lang.Integer" parameterType="java.lang.Integer">
+        select id
+        from competition
+        where awards_status = #{unawards}
+        and now() &gt; activity_end
+    </select>
+    <select id="selectEndCompetitionWithFive" resultType="java.lang.Integer">
+        select id,
+               competition_name
+        from competition
+        where awards_status = #{awards}
+        and now() &gt; activity_end
+        limit 5
+    </select>
+    <select id="selectUserIdByCompetitionId" resultType="java.lang.Integer">
+        select distinct tu.user_id
+        from team_user tu
+                 left join team t on tu.team_id = t.id
+                 left join competition_team ct on t.id = ct.team_id
+        where ct.competition_id = #{competitionId}
+    </select>
+
+
+</mapper>

@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.govy.base.mapper.AwardMapper">
+
+
+    <resultMap id="awardVOMap" type="com.govy.model.vo.AwardVO">
+        <id property="id" column="id"/>
+        <result property="teamId" column="team_id"/>
+        <result property="teamName" column="teamName"/>
+        <result property="awardRank" column="award_rank"/>
+        <!-- 使用嵌套select查询集合 -->
+        <collection property="worksUrl"
+                    ofType="string"
+                    column="{teamId=team_id,competitionId=competition_id}"
+                    select="selectWorksUrls"/>
+    </resultMap>
+
+    <select id="getAwardList" resultMap="awardVOMap">
+        SELECT
+        a.id,
+        a.team_id,
+        a.competition_id,  <!-- 新增此字段用于嵌套查询 -->
+        a.award_rank,
+        t.team AS teamName
+        FROM award a
+        LEFT JOIN team t ON a.team_id = t.id
+        WHERE a.competition_id = #{competitionId}
+        order by a.award_rank
+    </select>
+
+    <select id="selectWorksUrls" resultType="string">
+        SELECT picture
+        FROM work
+        WHERE team_id = #{teamId}
+          AND competition_id = #{competitionId}
+    </select>
+
+
+    <resultMap id="awardWorkVOResultMap" type="com.govy.model.vo.AwardWorkVO">
+        <id property="competitionId" column="id"/>
+        <result property="competitionName" column="competition_name"/>
+        <collection property="worksUrl"
+                    ofType="string"
+                    column="{competitionId=id}"
+                    select="selectFirstPlaceWorks"/>
+    </resultMap>
+
+    <select id="getWinWithCompetition" resultMap="awardWorkVOResultMap">
+        SELECT
+            c.id,
+            c.competition_name
+        FROM competition c
+        WHERE c.awards_status = #{awards}
+          AND c.activity_end &lt; NOW()
+        ORDER BY c.activity_end DESC
+        LIMIT 5
+    </select>
+
+    <select id="selectFirstPlaceWorks" resultType="string">
+        SELECT DISTINCT w.picture
+        FROM award a
+                 JOIN work w
+                      ON a.team_id = w.team_id
+                          AND a.competition_id = w.competition_id
+        WHERE a.competition_id = #{competitionId}
+          AND a.award_rank = 1
+    </select>
+    <select id="getSchoolByTeamId" resultType="java.lang.String">
+        SELECT un.name
+        FROM user u
+                 JOIN university un ON u.school_id = un.id
+        WHERE u.id = (
+            SELECT user_id
+            FROM team_user
+            WHERE team_id = #{teamId}
+              AND status = #{captain}
+            limit 1
+        )
+    </select>
+    <select id="getTeamMember" resultType="java.lang.String">
+        select u.username
+        from team t
+                 left join team_user tu on t.id = tu.team_id
+                 left join user u on tu.user_id = u.id
+        where t.id = #{teamId}
+    </select>
+    <select id="getAwardUrlList" resultType="java.lang.String">
+        SELECT DISTINCT a.award_url
+        FROM award a
+                 JOIN team_user tu ON a.team_id = tu.team_id
+        WHERE tu.user_id = #{userId}
+    </select>
+</mapper>

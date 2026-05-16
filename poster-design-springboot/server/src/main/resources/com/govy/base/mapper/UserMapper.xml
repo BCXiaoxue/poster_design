@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.govy.base.mapper.UserMapper">
+
+
+    <select id="selectByIdWithUniversity" resultType="com.govy.model.vo.UserVO">
+        select u.id,
+               username,
+               email,
+               phone,
+               status,
+               avatar_url,
+               gender,
+               birthday,
+               id_card,
+               authority,
+               school_id,
+               un.name as university
+        from user u
+                 left join university un
+                           on u.school_id = un.id
+        where u.id = #{userId}
+    </select>
+    <select id="countParticipateCompetitionNum" resultType="java.lang.Integer"
+            parameterType="java.lang.Integer">
+        select count(c.id) as participateCompetitionNum
+        from competition c
+        left join competition_team ct on c.id = ct.competition_id
+        left join team t on ct.team_id = t.id
+        left join team_user tu on t.id = tu.team_id
+        left join user u on tu.user_id = u.id
+        where u.id = #{userId}
+    </select>
+    <select id="countWinNum" resultType="java.lang.Integer" parameterType="java.lang.Integer">
+        select count(a.id) as winNum
+        from award a
+        left join team t on a.team_id = t.id
+        left join team_user tu on t.id = tu.team_id
+        left join user u on tu.user_id = u.id
+        where u.id = #{userId}
+    </select>
+    <select id="countWorkNum" resultType="java.lang.Integer" parameterType="java.lang.Integer">
+        select count(w.id) as workNum
+        from work w
+        left join team t on w.team_id = t.id
+        left join team_user tu on t.id = tu.team_id
+        left join user u on tu.user_id = u.id
+        where u.id = #{userId}
+    </select>
+    <select id="countTeamNum" resultType="java.lang.Integer" parameterType="java.lang.Integer">
+        select count(t.id) as teamNum
+        from team t
+        left join team_user tu on t.id = tu.team_id
+        left join user u on tu.user_id = u.id
+        where u.id = #{userId}
+    </select>
+    <select id="queryByName" resultType="com.govy.model.vo.UserVO">
+        select u.id,
+               username,
+               email,
+               phone,
+               status,
+               last_login,
+               avatar_url,
+               gender,
+               birthday,
+               authority,
+               school_id,
+               un.name as university
+        from user u
+        left join university un
+        on u.school_id = un.id
+        <where>
+            <if test="username != null">
+                u.username like concat('%', #{username}, '%')
+            </if>
+            and u.authority = #{commonUser}
+        </where>
+    </select>
+    <select id="getByPermissionAndName" resultType="com.govy.model.vo.UserVO">
+        select u.id,
+               username,
+               email,
+               phone,
+               status,
+               last_login,
+               avatar_url,
+               gender,
+               birthday,
+               authority,
+               school_id,
+               un.name as university
+        from user u
+        left join university un
+        on u.school_id = un.id
+        <where>
+            <if test="username != null and username != ''">
+                u.username like concat('%', #{username}, '%')
+            </if>
+            <if test="authority != null">
+                and u.authority = #{authority}
+            </if>
+            <if test="status != null">
+                and u.status = #{status}
+            </if>
+        </where>
+    </select>
+    <select id="queryByNameAndCompetitionId" resultType="com.govy.model.vo.UserVO">
+        select u.id,
+        u.username,
+        u.email,
+        u.phone,
+        u.status,
+        u.last_login,
+        u.avatar_url,
+        u.gender,
+        u.birthday,
+        u.authority,
+        u.school_id,
+        un.name as university
+        from user u
+        left join university un on u.school_id = un.id
+        where u.authority = #{commonUser}
+        and not exists (
+        select 1
+        from team_user tu
+        join team t on tu.team_id = t.id
+        join competition_team ct on t.id = ct.team_id
+        where ct.competition_id = #{competitionId}
+        and tu.user_id = u.id
+        )
+        <if test="username != null">
+            and u.username like concat('%', #{username}, '%')
+        </if>
+    </select>
+</mapper>

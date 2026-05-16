@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.govy.base.mapper.WorkMapper">
+
+    <resultMap id="BaseResultMap" type="com.govy.model.entity.Work">
+            <id property="id" column="id" />
+            <result property="teamId" column="team_id" />
+            <result property="name" column="name" />
+            <result property="submissionDate" column="submission_date" />
+            <result property="introduction" column="introduction" />
+            <result property="share" column="share" />
+            <result property="picture" column="picture" />
+            <result property="createTime" column="create_time" />
+            <result property="updateTime" column="update_time" />
+    </resultMap>
+    <select id="selectWorkImagesByCompetitionId" resultType="com.govy.model.vo.WorkUrlVO">
+        SELECT
+            w.picture AS url,
+            w.id AS id
+        FROM work w
+        WHERE w.competition_id = #{id}
+    </select>
+    <select id="getByIdWithTeamName" resultType="com.govy.model.vo.WorkVO">
+        select w.id as id,
+               w.name as name,
+               w.introduction as introduction,
+               w.picture as picture,
+               t.team as teamName
+        from work w, team t
+        where w.team_id = t.id
+          and w.id = #{id}
+    </select>
+    <select id="selectWorkByStatusAndName" resultType="com.govy.model.vo.WorkAdminQueryVO">
+        SELECT
+        w.id,
+        w.team_id,
+        w.name as workName,
+        w.submission_date,
+        w.introduction,
+        w.share,
+        w.picture,
+        w.create_time,
+        w.update_time,
+        c.competition_name as competitionName,
+        t.team as teamName
+        FROM work w
+        LEFT JOIN team t ON w.team_id = t.id
+        LEFT JOIN competition_team ct ON t.id = ct.team_id
+        LEFT JOIN competition c ON ct.competition_id = c.id
+        <where>
+            <if test="workName != null and workName != ''">
+                AND w.name LIKE CONCAT('%', #{workName}, '%')
+            </if>
+            <if test="workStatus != null">
+                <choose>
+                    <!-- 状态1: 已评审 - 存在评分记录 -->
+                    <when test="workStatus == 1">
+                        AND EXISTS (
+                        SELECT 1 FROM score s
+                        WHERE s.team_id = t.id
+                        AND s.competition_id = c.id
+                        )
+                    </when>
+                    <!-- 状态0: 未评审 - 无评分记录 -->
+                    <when test="workStatus == 0">
+                        AND NOT EXISTS (
+                        SELECT 1 FROM score s
+                        WHERE s.team_id = t.id
+                        AND s.competition_id = c.id
+                        )
+                    </when>
+                </choose>
+            </if>
+        </where>
+        order by w.create_time desc
+    </select>
+
+
+</mapper>

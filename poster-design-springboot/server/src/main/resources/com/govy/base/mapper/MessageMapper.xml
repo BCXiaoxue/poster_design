@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.govy.base.mapper.MessageMapper">
+
+    <resultMap id="BaseResultMap" type="com.govy.model.entity.Message">
+            <id property="id" column="id" />
+            <result property="sendId" column="send_id" />
+            <result property="sendRole" column="send_role" />
+            <result property="receiveId" column="receive_id" />
+            <result property="receiveRole" column="receive_role" />
+            <result property="content" column="content" />
+            <result property="time" column="time" />
+            <result property="compensationId" column="compensation_id" />
+    </resultMap>
+    <select id="selectPageBySendMessageDTO" resultType="com.govy.model.vo.MessageVO">
+        SELECT
+        m.id,
+        m.send_id,
+        m.send_role,
+        m.receive_id,
+        m.receive_role,
+        m.content,
+        m.time,
+        m.status,
+        m.category,
+        m.competition_id,
+        m.team_id,
+        u.username AS name
+        FROM message m
+        LEFT JOIN user u ON m.receive_id = u.id
+        <where>
+            <if test="messageDTO.sendId != null">
+                AND m.send_id = #{messageDTO.sendId}
+            </if>
+            <if test="messageDTO.status != null">
+                AND m.status = #{messageDTO.status}
+            </if>
+            <if test="messageDTO.category != null">
+                AND m.category = #{messageDTO.category}
+            </if>
+        </where>
+        order by m.create_time desc
+    </select>
+    <select id="selectPageByReceiveMessageDTO" resultType="com.govy.model.vo.MessageVO">
+        SELECT
+        m.id,
+        m.send_id,
+        m.send_role,
+        m.receive_id,
+        m.receive_role,
+        m.content,
+        m.time,
+        m.status,
+        m.category,
+        m.competition_id,
+        m.team_id,
+        u.username AS name
+        FROM message m
+        LEFT JOIN user u ON m.send_id = u.id
+        <where>
+            <if test="messageDTO.receiveId != null">
+                AND m.receive_id = #{messageDTO.receiveId}
+            </if>
+            <if test="messageDTO.status != null">
+                AND m.status = #{messageDTO.status}
+            </if>
+            <if test="messageDTO.category != null">
+                AND m.category = #{messageDTO.category}
+            </if>
+        </where>
+        order by m.create_time desc
+    </select>
+</mapper>

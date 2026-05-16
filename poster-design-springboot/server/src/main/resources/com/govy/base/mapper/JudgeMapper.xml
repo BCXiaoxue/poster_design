@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.govy.base.mapper.JudgeMapper">
+
+    <resultMap id="BaseResultMap" type="com.govy.model.entity.Judge">
+            <id property="id" column="id" />
+            <result property="competitionId" column="competition_id" />
+            <result property="userId" column="user_id" />
+            <result property="createTime" column="create_time" />
+            <result property="updateTime" column="update_time" />
+    </resultMap>
+
+    <resultMap id="CompetitionAdminByIdVOResultMap" type="com.govy.model.vo.CompetitionAdminByIdVO">
+        <!-- 竞赛基础字段 -->
+        <id property="id" column="id"/>
+        <result property="competitionName" column="competition_name"/>
+        <result property="introduction" column="introduction"/>
+        <result property="registrationBegin" column="registration_begin"/>
+        <result property="registrationEnd" column="registration_end"/>
+        <result property="activityEnd" column="activity_end"/>
+        <result property="people" column="people"/>
+        <result property="notes" column="notes"/>
+        <result property="schedule" column="schedule"/>
+
+        <!-- 队伍统计 -->
+        <result property="teamCount" column="teamCount"/>
+
+        <!-- 评委列表（一对多） -->
+        <collection property="judges" ofType="com.govy.model.vo.JudgeVO">
+            <result property="judgeAvatarUrl" column="judgeAvatarUrl"/>
+            <result property="judgeName" column="judgeName"/>
+        </collection>
+    </resultMap>
+
+    <select id="selectPageWithUserId" resultType="com.govy.model.vo.CompetitionMyVO">
+        select
+            c.id,
+            c.competition_name,
+            c.registration_begin,
+            c.registration_end,
+            c.activity_end
+        from judge j
+        left join competition c
+        on j.competition_id = c.id
+        <where>
+            j.user_id = #{userId}
+            and now() &gt; c.registration_begin
+            and now() &lt; c.activity_end
+        </where>
+    </select>
+    <resultMap id="TeamWithWorkVOResultMap" type="com.govy.model.vo.TeamWithWorkVO">
+        <!-- 队伍基本信息 -->
+        <id property="teamId" column="teamId"/>
+        <result property="teamName" column="teamName"/>
+        <result property="isEvaluated" column="isEvaluated"/>
+
+        <!-- 作品列表（一对多关系） -->
+        <collection property="works" ofType="com.govy.model.vo.WorkVO">
+            <id property="id" column="workId"/>
+            <result property="name" column="workName"/>
+            <result property="introduction" column="introduction"/>
+            <result property="picture" column="picture"/>
+            <!-- 如果需要，可以映射团队名 -->
+            <result property="teamName" column="teamName"/>
+        </collection>
+    </resultMap>
+
+    <select id="getCompetitionTeamAndWork" resultMap="TeamWithWorkVOResultMap"
+            parameterType="java.lang.Integer">
+        SELECT
+            t.id AS teamId,
+            t.team AS teamName,
+            w.id AS workId,
+            w.name AS workName,
+            w.introduction,
+            w.picture,
+            CASE
+                WHEN EXISTS (
+                    SELECT 1 FROM score s
+                    WHERE s.competition_id = #{competitionId}
+                      AND s.team_id = t.id
+                      AND s.judge_id = #{userId}
+                ) THEN TRUE
+                ELSE FALSE
+                END AS isEvaluated
+        FROM team t
+                 LEFT JOIN competition_team ct ON t.id = ct.team_id
+                 LEFT JOIN work w ON t.id = w.team_id
+        WHERE ct.competition_id = #{competitionId}
+    </select>
+    <resultMap id="competitionWithJudgeMap" type="com.govy.model.vo.CompetitionWithJudgeVO">
+        <!-- 竞赛字段映射 -->
+        <id property="competitionId" column="competitionId"/>
+        <result property="competitionName" column="competition_name"/>
+
+        <!-- 嵌套评委集合 -->
+        <collection property="judges" ofType="com.govy.model.vo.JudgeVO">
+            <!-- 评委字段映射 -->
+            <id property="judgeId" column="judgeId"/>
+            <result property="judgeAvatarUrl" column="judgeAvatarUrl"/>
+            <result property="judgeName" column="judgeName"/>
+            <result property="universityName" column="universityName"/>
+        </collection>
+    </resultMap>
+    <select id="getCompetitionJudge" resultMap="competitionWithJudgeMap"
+            parameterType="java.lang.Integer">
+        SELECT
+            c.id AS competitionId,
+            c.competition_name,
+            u.id AS judgeId,
+            u.avatar_url AS judgeAvatarUrl,
+            u.username AS judgeName,
+            un.name AS universityName
+        FROM competition c
+                 LEFT JOIN judge j ON c.id = j.competition_id
+                 LEFT JOIN user u ON j.user_id = u.id
+                 LEFT JOIN university un ON u.school_id = un.id
+        WHERE c.id = #{competitionId}
+    </select>
+
+
+    <select id="getCompetitionTeamJudge" resultType="com.govy.model.vo.ScoreVO">
+        select s.score,
+               s.comment
+        from score s
+        where competition_id = #{competitionId}
+          and team_id = #{teamId}
+          and judge_id = #{userId}
+    </select>
+
+
+</mapper>
