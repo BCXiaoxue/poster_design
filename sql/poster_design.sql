@@ -1,10 +1,10 @@
 /*
  Navicat Premium Data Transfer
 
- Source Server         : shixun
+ Source Server         : local
  Source Server Type    : MySQL
  Source Server Version : 80042
- Source Host           : 122.51.51.36:3307
+ Source Host           : localhost:3306
  Source Schema         : poster_design
 
  Target Server Type    : MySQL

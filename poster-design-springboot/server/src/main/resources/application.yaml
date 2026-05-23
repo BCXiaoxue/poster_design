@@ -16,11 +16,11 @@ spring:
       max-request-size: 10MB
   datasource:
     type: com.zaxxer.hikari.HikariDataSource  # 使用高性能的Hikari连接池
-    url: jdbc:mysql://122.51.51.36:3307/poster_design?useUnicode=true&characterEncoding=utf-8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/poster_design?useUnicode=true&characterEncoding=utf-8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
     # 生产环境建议启用SSL并配置证书（移除useSSL=false）
-    # 建议将数据库连接信息移至环境变量或配置中心
-    username: root
-    password: mysql_admin_govy  # 生产环境建议使用加密密码或Vault存储
+    # 请在 application-local.yaml 或环境变量中配置真实数据库连接信息
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:your-db-password}
     hikari:
       connection-test-query: SELECT 1  # 连接验证查询（MySQL 8+建议使用connection-init-sql）
       connection-timeout: 60000  # 连接超时时间（毫秒）
@@ -46,10 +46,10 @@ spring:
       sentinel:
         master: mymaster
         nodes:
-        - 122.51.51.36:27001
-        - 122.51.51.36:27002
-        - 122.51.51.36:27003
-      password: redis_admin_govy
+        - ${REDIS_HOST:localhost}:${REDIS_SENTINEL_PORT1:27001}
+        - ${REDIS_HOST:localhost}:${REDIS_SENTINEL_PORT2:27002}
+        - ${REDIS_HOST:localhost}:${REDIS_SENTINEL_PORT3:27003}
+      password: ${REDIS_PASSWORD:your-redis-password}
 
 # MyBatis-Plus配置
 mybatis-plus:
@@ -60,10 +60,10 @@ mybatis-plus:
 # 自定义MinIO配置
 govy:
   minio:
-    endpoint: http://122.51.51.36:9000  # MinIO服务地址
-    access-key: YvX7lhLM7oqQqBfd1Naq  # 敏感信息建议加密存储
-    secret-key: rzd39NLve6ZM5A3pxDyo1MbX7IsSaBm7jnb3kIvh  # 建议使用环境变量注入
-    bucket-name: poster-design  # 存储桶名称
+    endpoint: ${MINIO_ENDPOINT:http://localhost:9000}
+    access-key: ${MINIO_ACCESS_KEY:your-minio-access-key}
+    secret-key: ${MINIO_SECRET_KEY:your-minio-secret-key}
+    bucket-name: ${MINIO_BUCKET:poster-design}
 
 # 阿里云服务配置（强烈建议使用加密配置）
 aliyun:
